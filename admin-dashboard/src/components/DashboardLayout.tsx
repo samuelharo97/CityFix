@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   AppBar,
   Box,
@@ -16,13 +16,18 @@ import {
   MenuItem,
   Avatar,
   Tooltip,
-  ListItemButton
+  ListItemButton,
+  useTheme
 } from '@mui/material';
 import {
   Menu as MenuIcon,
   Dashboard as DashboardIcon,
+  BarChart as StatsIcon,
+  Settings as SettingsIcon,
+  Help as HelpIcon,
   Person as PersonIcon,
-  ExitToApp as LogoutIcon
+  ExitToApp as LogoutIcon,
+  Assignment as ReportsIcon
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -39,7 +44,9 @@ const DashboardLayout = ({ children, title }: DashboardLayoutProps) => {
     null
   );
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout } = useAuth();
+  const theme = useTheme();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -64,32 +71,91 @@ const DashboardLayout = ({ children, title }: DashboardLayoutProps) => {
     setMobileOpen(false);
   };
 
+  const isActive = (path: string) => {
+    return (
+      location.pathname === path ||
+      (path !== '/dashboard' && location.pathname.startsWith(path))
+    );
+  };
+
+  const menuItems = [
+    { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
+    { text: 'Relatórios', icon: <ReportsIcon />, path: '/reports' },
+    { text: 'Estatísticas', icon: <StatsIcon />, path: '/stats' },
+    { text: 'Configurações', icon: <SettingsIcon />, path: '/settings' },
+    { text: 'Ajuda', icon: <HelpIcon />, path: '/help' }
+  ];
+
   const drawer = (
     <div>
-      <Toolbar>
-        <Typography variant="h6" noWrap component="div">
-          CityFix Admin
-        </Typography>
+      <Toolbar sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            flexDirection: 'column'
+          }}
+        >
+          <img
+            src="/logo.png"
+            alt="CityFix Logo"
+            style={{ height: 50, marginBottom: 8 }}
+          />
+          <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+            CityFix Admin
+          </Typography>
+        </Box>
       </Toolbar>
       <Divider />
       <List>
-        <ListItemButton onClick={() => handleNavigate('/dashboard')}>
-          <ListItemIcon>
-            <DashboardIcon />
-          </ListItemIcon>
-          <ListItemText primary="Dashboard" />
-        </ListItemButton>
+        {menuItems.map(item => (
+          <ListItemButton
+            key={item.text}
+            onClick={() => handleNavigate(item.path)}
+            sx={{
+              backgroundColor: isActive(item.path)
+                ? theme.palette.action.selected
+                : 'transparent',
+              '&:hover': {
+                backgroundColor: theme.palette.action.hover
+              },
+              my: 0.5,
+              mx: 1,
+              borderRadius: 1
+            }}
+          >
+            <ListItemIcon
+              sx={{
+                color: isActive(item.path)
+                  ? theme.palette.primary.main
+                  : 'inherit'
+              }}
+            >
+              {item.icon}
+            </ListItemIcon>
+            <ListItemText
+              primary={item.text}
+              primaryTypographyProps={{
+                fontWeight: isActive(item.path) ? 'bold' : 'normal',
+                color: isActive(item.path)
+                  ? theme.palette.primary.main
+                  : 'inherit'
+              }}
+            />
+          </ListItemButton>
+        ))}
       </List>
     </div>
   );
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: 'flex', width: 'calc(100vw - 15px)' }}>
       <AppBar
         position="fixed"
         sx={{
           width: { sm: `calc(100% - ${drawerWidth}px)` },
-          ml: { sm: `${drawerWidth}px` }
+          ml: { sm: `${drawerWidth}px` },
+          boxShadow: 1
         }}
       >
         <Toolbar>
@@ -107,6 +173,14 @@ const DashboardLayout = ({ children, title }: DashboardLayoutProps) => {
           </Typography>
 
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {user?.name && (
+              <Typography
+                variant="body2"
+                sx={{ mr: 2, display: { xs: 'none', sm: 'block' } }}
+              >
+                Olá, {user.name}
+              </Typography>
+            )}
             <Tooltip title="Configurações de conta">
               <IconButton
                 onClick={handleUserMenuOpen}
@@ -115,7 +189,7 @@ const DashboardLayout = ({ children, title }: DashboardLayoutProps) => {
                 aria-controls="menu-appbar"
                 aria-haspopup="true"
               >
-                <Avatar sx={{ bgcolor: 'secondary.main' }}>
+                <Avatar sx={{ bgcolor: 'primary.main' }}>
                   {user?.name?.charAt(0) || 'A'}
                 </Avatar>
               </IconButton>
@@ -178,7 +252,8 @@ const DashboardLayout = ({ children, title }: DashboardLayoutProps) => {
             display: { xs: 'none', sm: 'block' },
             '& .MuiDrawer-paper': {
               boxSizing: 'border-box',
-              width: drawerWidth
+              width: drawerWidth,
+              borderRight: `1px solid ${theme.palette.divider}`
             }
           }}
           open
@@ -192,7 +267,9 @@ const DashboardLayout = ({ children, title }: DashboardLayoutProps) => {
           flexGrow: 1,
           p: 3,
           width: { sm: `calc(100% - ${drawerWidth}px)` },
-          mt: '64px'
+          mt: '64px',
+          backgroundColor: theme.palette.grey[50],
+          minHeight: '100vh'
         }}
       >
         <Container maxWidth="lg">{children}</Container>

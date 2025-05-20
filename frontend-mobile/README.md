@@ -1,20 +1,20 @@
 # CityFix
 
-CityFix é um aplicativo móvel que permite aos cidadãos reportar problemas de infraestrutura urbana para as autoridades competentes.
+CityFix is a mobile application that allows citizens to report urban infrastructure problems to the competent authorities.
 
-## Funcionalidades
+## Features
 
-- Autenticação de usuários (login/registro com email ou Google)
-- Tela inicial mostrando denúncias recentes ou próximas
-- Formulário para criar nova denúncia com:
-  - Título
-  - Descrição
-  - Categoria (Iluminação, Buracos, Lixo, etc.)
-  - Upload de fotos/vídeos
-  - Localização via GPS
-- Tela de minhas denúncias para acompanhar o status das submissões
+- User authentication (login/register with email or Google)
+- Home screen showing recent or nearby reports
+- Form to create a new report with:
+  - Title
+  - Description
+  - Category (Lighting, Potholes, Trash, etc.)
+  - Upload of photos/videos
+  - Location via GPS
+- My reports screen to track the status of submissions
 
-## Tecnologias Utilizadas
+## Technologies Used
 
 - React Native
 - Expo
@@ -26,61 +26,61 @@ CityFix é um aplicativo móvel que permite aos cidadãos reportar problemas de 
 - Expo Camera
 - Expo Auth Session
 
-## Pré-requisitos
+## Prerequisites
 
-- Node.js (versão 14 ou superior)
-- npm ou yarn
+- Node.js (version 14 or higher)
+- npm or yarn
 - Expo CLI
-- Expo Go app no dispositivo móvel
+- Expo Go app on mobile device
 
-## Instalação
+## Installation
 
-1. Clone o repositório:
+1. Clone the repository:
 
 ```bash
-git clone https://github.com/seu-usuario/cityfix.git
+git clone https://github.com/your-username/cityfix.git
 cd cityfix
 ```
 
-2. Instale as dependências:
+2. Install dependencies:
 
 ```bash
 npm install
-# ou
+# or
 yarn install
 ```
 
-3. Inicie o projeto:
+3. Start the project:
 
 ```bash
 npm start
-# ou
+# or
 yarn start
 ```
 
-4. Use o app Expo Go para escanear o QR code e testar o aplicativo
+4. Use the Expo Go app to scan the QR code and test the application
 
-## Estrutura do Projeto
+## Project Structure
 
 ```
 src/
-  ├── components/     # Componentes reutilizáveis
-  ├── navigation/     # Configuração de navegação
-  ├── screens/        # Telas do aplicativo
-  ├── services/       # Serviços e APIs
-  ├── types/          # Definições de tipos TypeScript
-  ├── utils/          # Funções utilitárias
-  └── constants/      # Constantes e configurações
+  ├── components/     # Reusable components
+  ├── navigation/     # Navigation configuration
+  ├── screens/        # Application screens
+  ├── hooks/          # Hooks
+  ├── services/       # Services and APIs
+  ├── types/          # TypeScript type definitions
+  ├── utils/          # Utility functions
 ```
 
-## Contribuição
+## Contribution
 
-1. Faça um fork do projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
+1. Fork the project
+2. Create a branch for your feature (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-## Licença
+## License
 
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.

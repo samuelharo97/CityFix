@@ -35,6 +35,7 @@ export interface Report {
   mediaUrls?: string[];
   location: Location;
   status: ReportStatus;
+  streetName?: string;
   createdBy: User;
   createdAt: string;
   updatedAt: string;

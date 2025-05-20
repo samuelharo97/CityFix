@@ -335,7 +335,9 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa'
+    backgroundColor: '#f8f9fa',
+    paddingRight: 6,
+    paddingLeft: 6
   },
   scrollContent: {
     paddingBottom: Platform.OS === 'android' ? 80 : 30
@@ -351,6 +353,7 @@ const styles = StyleSheet.create({
   },
   welcomeTitle: {
     marginBottom: 8,
+    marginTop: 4,
     fontWeight: 'bold'
   },
   reportButton: {

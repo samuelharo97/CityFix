@@ -4,7 +4,6 @@ import {
   Box,
   Typography,
   Paper,
-  GridLegacy as Grid,
   Button,
   Card,
   CardMedia,
@@ -14,11 +13,19 @@ import {
   MenuItem,
   CircularProgress,
   Divider,
-  Chip
+  Chip,
+  TextField,
+  useTheme
 } from '@mui/material';
-import { ArrowBack } from '@mui/icons-material';
+import {
+  ArrowBack,
+  LocationOn,
+  Person,
+  CalendarToday,
+  Category
+} from '@mui/icons-material';
 import { reportsApi } from '../services/api';
-import { ReportStatus } from '../types';
+import { ReportStatus, ReportCategory } from '../types';
 import type { Report } from '../types';
 import DashboardLayout from '../components/DashboardLayout';
 
@@ -29,6 +36,38 @@ const statusColors = {
   rejected: '#F44336'
 };
 
+// Função para traduzir as categorias
+const getCategoryTranslation = (category: ReportCategory): string => {
+  switch (category) {
+    case ReportCategory.INFRASTRUCTURE:
+      return 'Infraestrutura';
+    case ReportCategory.ENVIRONMENT:
+      return 'Meio Ambiente';
+    case ReportCategory.SAFETY:
+      return 'Segurança';
+    case ReportCategory.OTHER:
+      return 'Outros';
+    default:
+      return String(category);
+  }
+};
+
+// Função para traduzir os status
+const getStatusTranslation = (status: ReportStatus): string => {
+  switch (status) {
+    case ReportStatus.PENDING:
+      return 'Pendente';
+    case ReportStatus.IN_PROGRESS:
+      return 'Em Andamento';
+    case ReportStatus.RESOLVED:
+      return 'Resolvido';
+    case ReportStatus.REJECTED:
+      return 'Rejeitado';
+    default:
+      return String(status);
+  }
+};
+
 const ReportDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -37,6 +76,8 @@ const ReportDetailsPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<ReportStatus | ''>('');
   const [updating, setUpdating] = useState(false);
+  const [comment, setComment] = useState('');
+  const theme = useTheme();
 
   useEffect(() => {
     const fetchReport = async () => {
@@ -48,7 +89,7 @@ const ReportDetailsPage = () => {
         setStatus(response.status);
       } catch (err) {
         console.error('Error fetching report:', err);
-        setError('Failed to load report details');
+        setError('Falha ao carregar os detalhes do relato');
       } finally {
         setLoading(false);
       }
@@ -68,12 +109,13 @@ const ReportDetailsPage = () => {
       setUpdating(true);
       // Make sure we're sending the exact enum value expected by the backend
       const statusValue = status as ReportStatus;
-      console.log('Sending status update:', { status: statusValue });
-      await reportsApi.updateReportStatus(id!, statusValue);
+      console.log('Sending status update:', { status: statusValue, comment });
+      await reportsApi.updateReportStatus(id!, statusValue, comment);
       setReport(prev => (prev ? { ...prev, status: statusValue } : null));
+      setComment('');
     } catch (err) {
       console.error('Error updating status:', err);
-      setError('Failed to update report status');
+      setError('Falha ao atualizar o status do relato');
     } finally {
       setUpdating(false);
     }
@@ -101,7 +143,7 @@ const ReportDetailsPage = () => {
       <DashboardLayout>
         <Paper sx={{ p: 3, mt: 3 }}>
           <Typography variant="h6" color="error">
-            {error || 'Report not found'}
+            {error || 'Relato não encontrado'}
           </Typography>
           <Button
             variant="contained"
@@ -109,7 +151,7 @@ const ReportDetailsPage = () => {
             onClick={() => navigate('/dashboard')}
             sx={{ mt: 2 }}
           >
-            Back to Dashboard
+            Voltar ao Dashboard
           </Button>
         </Paper>
       </DashboardLayout>
@@ -121,7 +163,7 @@ const ReportDetailsPage = () => {
   };
 
   return (
-    <DashboardLayout>
+    <DashboardLayout title="Detalhes do Relato">
       <Box sx={{ mb: 3, display: 'flex', alignItems: 'center' }}>
         <Button
           variant="outlined"
@@ -129,111 +171,171 @@ const ReportDetailsPage = () => {
           onClick={() => navigate('/dashboard')}
           sx={{ mr: 2 }}
         >
-          Back
+          Voltar
         </Button>
-        <Typography variant="h5">Report Details</Typography>
+        <Typography variant="h5">Detalhes do Relato</Typography>
       </Box>
 
       <Paper sx={{ p: 3, mb: 3 }}>
-        <Grid container spacing={3}>
-          <Grid item xs={12}>
-            <Box
+        <Box sx={{ width: '100%' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mb: 2
+            }}
+          >
+            <Typography variant="h6">{report.title}</Typography>
+            <Chip
+              label={getStatusTranslation(report.status)}
               sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                mb: 2
+                backgroundColor: statusColors[report.status] || '#757575',
+                color: 'white',
+                fontWeight: 'bold'
               }}
-            >
-              <Typography variant="h6">{report.title}</Typography>
-              <Chip
-                label={report.status}
-                sx={{
-                  backgroundColor: statusColors[report.status] || '#757575',
-                  color: 'white',
-                  fontWeight: 'bold'
-                }}
-              />
+            />
+          </Box>
+          <Divider sx={{ mb: 2 }} />
+
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', md: 'row' },
+              gap: 4
+            }}
+          >
+            <Box sx={{ flex: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
+                <Category sx={{ mr: 1, color: theme.palette.primary.main }} />
+                <Box>
+                  <Typography variant="body2" color="textSecondary">
+                    Categoria
+                  </Typography>
+                  <Typography variant="body1">
+                    {getCategoryTranslation(report.category)}
+                  </Typography>
+                </Box>
+              </Box>
+
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
+                <LocationOn sx={{ mr: 1, color: theme.palette.primary.main }} />
+                <Box>
+                  <Typography variant="body2" color="textSecondary">
+                    Localização
+                  </Typography>
+                  <Typography variant="body1">
+                    {formatLocation(report.location)}
+                  </Typography>
+                  {report.streetName && (
+                    <Typography variant="body1" color="textSecondary">
+                      {report.streetName}
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
+
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
+                <Person sx={{ mr: 1, color: theme.palette.primary.main }} />
+                <Box>
+                  <Typography variant="body2" color="textSecondary">
+                    Reportado por
+                  </Typography>
+                  <Typography variant="body1">
+                    {report?.createdBy?.name ?? ''}
+                  </Typography>
+                </Box>
+              </Box>
+
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
+                <CalendarToday
+                  sx={{ mr: 1, color: theme.palette.primary.main }}
+                />
+                <Box>
+                  <Typography variant="body2" color="textSecondary">
+                    Data do Relato
+                  </Typography>
+                  <Typography variant="body1">
+                    {new Date(report.createdAt).toLocaleString('pt-BR')}
+                  </Typography>
+                </Box>
+              </Box>
             </Box>
-            <Divider sx={{ mb: 2 }} />
-          </Grid>
 
-          <Grid item xs={12} md={6}>
-            <Typography variant="body2" color="textSecondary">
-              Category
-            </Typography>
-            <Typography variant="body1" sx={{ mb: 2 }}>
-              {report.category}
-            </Typography>
-
-            <Typography variant="body2" color="textSecondary">
-              Location
-            </Typography>
-            <Typography variant="body1" sx={{ mb: 2 }}>
-              {formatLocation(report.location)}
-            </Typography>
-
-            <Typography variant="body2" color="textSecondary">
-              Reported By
-            </Typography>
-            <Typography variant="body1" sx={{ mb: 2 }}>
-              {report?.createdBy?.name ?? ''}
-            </Typography>
-
-            <Typography variant="body2" color="textSecondary">
-              Reported On
-            </Typography>
-            <Typography variant="body1" sx={{ mb: 2 }}>
-              {new Date(report.createdAt).toLocaleString()}
-            </Typography>
-          </Grid>
-
-          <Grid item xs={12} md={6}>
-            <Typography variant="body2" color="textSecondary">
-              Description
-            </Typography>
-            <Typography variant="body1" sx={{ mb: 2 }}>
-              {report.description}
-            </Typography>
-
-            <Box sx={{ display: 'flex', alignItems: 'center', mt: 3 }}>
-              <FormControl sx={{ minWidth: 200, mr: 2 }}>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  value={status}
-                  onChange={e => handleStatusChange(e.target.value)}
-                  label="Status"
-                  disabled={updating}
-                >
-                  <MenuItem value="pending">Pending</MenuItem>
-                  <MenuItem value="in_progress">In Progress</MenuItem>
-                  <MenuItem value="resolved">Resolved</MenuItem>
-                  <MenuItem value="rejected">Rejected</MenuItem>
-                </Select>
-              </FormControl>
-              <Button
-                variant="contained"
-                onClick={updateStatus}
-                disabled={updating || status === report.status}
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="body2" color="textSecondary">
+                Descrição
+              </Typography>
+              <Typography
+                variant="body1"
+                sx={{ mb: 3, whiteSpace: 'pre-wrap' }}
               >
-                {updating ? <CircularProgress size={24} /> : 'Update Status'}
-              </Button>
+                {report.description}
+              </Typography>
+
+              <Typography
+                variant="body2"
+                color="textSecondary"
+                sx={{ mt: 3, mb: 1 }}
+              >
+                Atualizar Status
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <FormControl fullWidth>
+                  <InputLabel>Status</InputLabel>
+                  <Select
+                    value={status}
+                    onChange={e => handleStatusChange(e.target.value)}
+                    label="Status"
+                    disabled={updating}
+                  >
+                    <MenuItem value="pending">Pendente</MenuItem>
+                    <MenuItem value="in_progress">Em Andamento</MenuItem>
+                    <MenuItem value="resolved">Resolvido</MenuItem>
+                    <MenuItem value="rejected">Rejeitado</MenuItem>
+                  </Select>
+                </FormControl>
+
+                <TextField
+                  label="Comentário (opcional)"
+                  multiline
+                  rows={3}
+                  value={comment}
+                  onChange={e => setComment(e.target.value)}
+                  fullWidth
+                  disabled={updating}
+                  placeholder="Adicione informações sobre a atualização de status"
+                />
+
+                <Button
+                  variant="contained"
+                  onClick={updateStatus}
+                  disabled={updating || status === report.status}
+                  fullWidth
+                >
+                  {updating ? (
+                    <CircularProgress size={24} />
+                  ) : (
+                    'Atualizar Status'
+                  )}
+                </Button>
+              </Box>
             </Box>
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
       </Paper>
 
       {report.imageUrl && (
         <Paper sx={{ p: 3, mb: 3 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
-            Primary Image
+            Imagem Principal
           </Typography>
           <Card sx={{ maxWidth: 600, margin: '0 auto' }}>
             <CardMedia
               component="img"
               height="400"
               image={report.imageUrl}
-              alt={`Report image`}
+              alt={`Imagem do relato`}
               sx={{ objectFit: 'contain' }}
             />
           </Card>
@@ -243,15 +345,26 @@ const ReportDetailsPage = () => {
       {report.mediaUrls && report.mediaUrls.length > 0 && (
         <Paper sx={{ p: 3, mb: 3 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
-            Additional Media
+            Mídias Adicionais
           </Typography>
-          <Grid container spacing={2}>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: '1fr',
+                sm: 'repeat(2, 1fr)',
+                md: 'repeat(3, 1fr)',
+                lg: 'repeat(4, 1fr)'
+              },
+              gap: 2
+            }}
+          >
             {report.mediaUrls.map((media, index) => {
               // Check if media is video by file extension
               const isVideo = /\.(mp4|mov|avi|wmv|flv|webm)$/i.test(media);
 
               return (
-                <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
+                <Box key={index}>
                   {isVideo ? (
                     <Box sx={{ mb: 2 }}>
                       <video
@@ -260,7 +373,7 @@ const ReportDetailsPage = () => {
                         style={{ maxHeight: '200px' }}
                         src={media}
                       >
-                        Your browser does not support the video tag.
+                        Seu navegador não suporta a tag de vídeo.
                       </video>
                     </Box>
                   ) : (
@@ -269,15 +382,15 @@ const ReportDetailsPage = () => {
                         component="img"
                         height="200"
                         image={media}
-                        alt={`Media ${index + 1}`}
+                        alt={`Mídia ${index + 1}`}
                         sx={{ objectFit: 'cover' }}
                       />
                     </Card>
                   )}
-                </Grid>
+                </Box>
               );
             })}
-          </Grid>
+          </Box>
         </Paper>
       )}
     </DashboardLayout>
