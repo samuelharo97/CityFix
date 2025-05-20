@@ -1,17 +1,8 @@
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate
-} from 'react-router-dom';
+import { BrowserRouter as Router } from 'react-router-dom';
 import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
 import { ptBR } from '@mui/material/locale';
 import { AuthProvider } from './contexts/AuthContext';
-import PrivateRoute from './components/PrivateRoute';
-import LoginPage from './pages/LoginPage';
-import DashboardPage from './pages/DashboardPage';
-import ReportDetailsPage from './pages/ReportDetailsPage';
-import StatsPage from './pages/StatsPage';
+import AppRoutes from './routes';
 
 const theme = createTheme(
   {
@@ -86,35 +77,7 @@ function App() {
       <CssBaseline />
       <AuthProvider>
         <Router>
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route
-              path="/dashboard"
-              element={
-                <PrivateRoute>
-                  <DashboardPage />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/reports/:id"
-              element={
-                <PrivateRoute>
-                  <ReportDetailsPage />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/stats"
-              element={
-                <PrivateRoute>
-                  <StatsPage />
-                </PrivateRoute>
-              }
-            />
-            <Route path="/" element={<Navigate to="/login" replace />} />
-            <Route path="*" element={<Navigate to="/login" replace />} />
-          </Routes>
+          <AppRoutes />
         </Router>
       </AuthProvider>
     </ThemeProvider>
