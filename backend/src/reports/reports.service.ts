@@ -16,6 +16,8 @@ import {
 import { User } from '../users/entities/user.entity';
 import { ReportStatus } from './enums/report-status.enum';
 import { ConfigService } from '@nestjs/config';
+import { Between } from 'typeorm';
+import { ReportCategory } from './enums/report-category.enum';
 
 @Injectable()
 export class ReportsService {
@@ -123,10 +125,6 @@ export class ReportsService {
     updateStatusDto: UpdateReportStatusDto,
     user: { userId: string; email: string; role: string }
   ): Promise<ReportResponseDto> {
-    console.log('updateStatusDto received:', updateStatusDto);
-    console.log('Status value:', updateStatusDto.status);
-    console.log('User:', user);
-
     const report = await this.findOneEntity(id);
 
     if (!user) {
@@ -174,5 +172,251 @@ export class ReportsService {
       relations: ['createdBy']
     });
     return reports.map(report => this.mapToResponseDto(report));
+  }
+
+  // Statistics methods
+  async getStatsSummary() {
+    const totalReports = await this.reportsRepository.count();
+    const resolvedReports = await this.reportsRepository.count({
+      where: { status: ReportStatus.RESOLVED }
+    });
+    const pendingReports = await this.reportsRepository.count({
+      where: { status: ReportStatus.PENDING }
+    });
+    const inProgressReports = await this.reportsRepository.count({
+      where: { status: ReportStatus.IN_PROGRESS }
+    });
+    const rejectedReports = await this.reportsRepository.count({
+      where: { status: ReportStatus.REJECTED }
+    });
+
+    // Calculate response and resolution times
+    const timeMetrics = await this.calculateTimeMetrics();
+
+    return {
+      totalReports,
+      byStatus: {
+        pending: pendingReports,
+        inProgress: inProgressReports,
+        resolved: resolvedReports,
+        rejected: rejectedReports
+      },
+      resolutionRate:
+        totalReports > 0 ? (resolvedReports / totalReports) * 100 : 0,
+      avgResolutionTimeHours: timeMetrics.avgResolutionTimeHours,
+      medianResolutionTimeHours: timeMetrics.medianResolutionTimeHours,
+      avgFirstResponseTimeHours: timeMetrics.avgFirstResponseTimeHours,
+      medianFirstResponseTimeHours: timeMetrics.medianFirstResponseTimeHours
+    };
+  }
+
+  /**
+   * Calculate various time metrics for reports
+   */
+  private async calculateTimeMetrics() {
+    // Get all resolved reports with their creation date
+    const resolvedReports = await this.reportsRepository.find({
+      where: { status: ReportStatus.RESOLVED },
+      select: ['id', 'createdAt']
+    });
+
+    const resolutionTimes: number[] = [];
+    const firstResponseTimes: number[] = [];
+
+    // Process each resolved report to calculate times
+    for (const report of resolvedReports) {
+      // Get all status logs for this report ordered by creation date
+      const statusLogs = await this.statusLogsRepository.find({
+        where: { report: { id: report.id } },
+        order: { createdAt: 'ASC' }
+      });
+
+      // Calculate first response time (first status change after creation)
+      if (statusLogs.length > 0) {
+        const firstLog = statusLogs[0];
+        const reportCreationTime = new Date(report.createdAt).getTime();
+        const firstResponseTime = new Date(firstLog.createdAt).getTime();
+        const firstResponseHours =
+          (firstResponseTime - reportCreationTime) / 3600000;
+        firstResponseTimes.push(firstResponseHours);
+      }
+
+      // Find resolution time (time to reach RESOLVED status)
+      const resolutionLog = statusLogs.find(
+        log => log.status === ReportStatus.RESOLVED
+      );
+      if (resolutionLog) {
+        const reportCreationTime = new Date(report.createdAt).getTime();
+        const resolutionTime = new Date(resolutionLog.createdAt).getTime();
+        const resolutionHours = (resolutionTime - reportCreationTime) / 3600000;
+        resolutionTimes.push(resolutionHours);
+      }
+    }
+
+    // Calculate averages and medians
+    const avgResolutionTimeHours = this.calculateAverage(resolutionTimes);
+    const medianResolutionTimeHours = this.calculateMedian(resolutionTimes);
+    const avgFirstResponseTimeHours = this.calculateAverage(firstResponseTimes);
+    const medianFirstResponseTimeHours =
+      this.calculateMedian(firstResponseTimes);
+
+    return {
+      avgResolutionTimeHours,
+      medianResolutionTimeHours,
+      avgFirstResponseTimeHours,
+      medianFirstResponseTimeHours
+    };
+  }
+
+  /**
+   * Calculate the average of an array of numbers
+   */
+  private calculateAverage(array: number[]): number {
+    if (array.length === 0) return 0;
+    const sum = array.reduce((acc, val) => acc + val, 0);
+    return parseFloat((sum / array.length).toFixed(2));
+  }
+
+  /**
+   * Calculate the median of an array of numbers
+   */
+  private calculateMedian(array: number[]): number {
+    if (array.length === 0) return 0;
+
+    // Sort the array
+    const sorted = [...array].sort((a, b) => a - b);
+
+    const mid = Math.floor(sorted.length / 2);
+
+    // If the array has an odd number of elements, return the middle element
+    // If the array has an even number of elements, return the average of the two middle elements
+    const median =
+      sorted.length % 2 === 0
+        ? (sorted[mid - 1] + sorted[mid]) / 2
+        : sorted[mid];
+
+    return parseFloat(median.toFixed(2));
+  }
+
+  async getStatsByCategory() {
+    const categories = Object.values(ReportCategory);
+    const result = await Promise.all(
+      categories.map(async (category: ReportCategory) => {
+        const count = await this.reportsRepository.count({
+          where: { category }
+        });
+        return { category, count };
+      })
+    );
+
+    // Sort by count descending
+    return result.sort((a, b) => b.count - a.count);
+  }
+
+  async getStatsByStatus() {
+    const statuses = Object.values(ReportStatus);
+    const result = await Promise.all(
+      statuses.map(async status => {
+        const count = await this.reportsRepository.count({
+          where: { status }
+        });
+        return { status, count };
+      })
+    );
+
+    return result;
+  }
+
+  async getStatsByDate(period: 'day' | 'week' | 'month') {
+    let startDate: Date;
+    const endDate = new Date();
+    const today = new Date();
+
+    switch (period) {
+      case 'day':
+        startDate = new Date(today);
+        startDate.setDate(today.getDate() - 7); // Last 7 days
+        break;
+      case 'week':
+        startDate = new Date(today);
+        startDate.setDate(today.getDate() - 28); // Last 4 weeks
+        break;
+      case 'month':
+        startDate = new Date(today);
+        startDate.setMonth(today.getMonth() - 6); // Last 6 months
+        break;
+      default:
+        startDate = new Date(today);
+        startDate.setDate(today.getDate() - 28); // Default to 4 weeks
+    }
+
+    const reports = await this.reportsRepository.find({
+      where: {
+        createdAt: Between(startDate, endDate)
+      },
+      select: ['createdAt', 'status']
+    });
+
+    if (period === 'day') {
+      // Group by day
+      const groupedByDay = this.groupReportsByDate(reports, 'day');
+      return { period, data: groupedByDay };
+    } else if (period === 'week') {
+      // Group by week
+      const groupedByWeek = this.groupReportsByDate(reports, 'week');
+      return { period, data: groupedByWeek };
+    } else {
+      // Group by month
+      const groupedByMonth = this.groupReportsByDate(reports, 'month');
+      return { period, data: groupedByMonth };
+    }
+  }
+
+  private groupReportsByDate(
+    reports: any[],
+    groupBy: 'day' | 'week' | 'month'
+  ) {
+    const groups = {};
+
+    reports.forEach(report => {
+      const date = new Date(report.createdAt);
+      let key: string;
+
+      if (groupBy === 'day') {
+        key = date.toISOString().split('T')[0]; // YYYY-MM-DD
+      } else if (groupBy === 'week') {
+        // Get the week start date
+        const weekStart = new Date(date);
+        weekStart.setDate(date.getDate() - date.getDay()); // Start of week (Sunday)
+        key = weekStart.toISOString().split('T')[0];
+      } else {
+        key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+          2,
+          '0'
+        )}`; // YYYY-MM
+      }
+
+      if (!groups[key]) {
+        groups[key] = {
+          date: key,
+          total: 0,
+          byStatus: {
+            pending: 0,
+            in_progress: 0,
+            resolved: 0,
+            rejected: 0
+          }
+        };
+      }
+
+      groups[key].total += 1;
+      groups[key].byStatus[report.status] += 1;
+    });
+
+    // Convert to array and sort by date
+    return Object.values(groups).sort(
+      (a: any, b: any) =>
+        new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
   }
 }

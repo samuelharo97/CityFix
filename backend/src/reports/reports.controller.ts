@@ -11,7 +11,8 @@ import {
   UseInterceptors,
   UploadedFile,
   UnsupportedMediaTypeException,
-  PayloadTooLargeException
+  PayloadTooLargeException,
+  Query
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -185,5 +186,35 @@ export class ReportsController {
 
     const fileUrl = await this.storageService.saveFile(file);
     return { fileUrl };
+  }
+
+  @Get('stats/summary')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async getStatsSummary() {
+    return this.reportsService.getStatsSummary();
+  }
+
+  @Get('stats/by-category')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async getStatsByCategory() {
+    return this.reportsService.getStatsByCategory();
+  }
+
+  @Get('stats/by-status')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async getStatsByStatus() {
+    return this.reportsService.getStatsByStatus();
+  }
+
+  @Get('stats/by-date')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async getStatsByDate(
+    @Query('period') period: 'day' | 'week' | 'month' = 'week'
+  ) {
+    return this.reportsService.getStatsByDate(period);
   }
 }

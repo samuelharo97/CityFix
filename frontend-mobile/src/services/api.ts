@@ -8,7 +8,7 @@ import {
 } from '../types/report';
 import { User } from '../types';
 
-const API_URL = 'http://192.168.0.6:3000'; // Change this to your backend URL
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
 
 class ApiError extends Error {
   constructor(

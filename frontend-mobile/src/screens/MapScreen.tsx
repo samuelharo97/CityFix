@@ -28,21 +28,23 @@ type MapScreenNavigationProp = NativeStackNavigationProp<
   'ReportDetails'
 >;
 
+// Coordinates for Manduri, São Paulo (App main location)
+const MANDURI_COORDINATES = {
+  latitude: -23.00056,
+  longitude: -49.32639,
+  latitudeDelta: 0.0922,
+  longitudeDelta: 0.0421
+};
+
 export default function MapScreen() {
   const navigation = useNavigation<MapScreenNavigationProp>();
   const { reports, loading, error, fetchReports } = useReports();
   const theme = useTheme();
-  const [initialRegion, setInitialRegion] = useState({
-    latitude: -23.55052,
-    longitude: -46.633308,
-    latitudeDelta: 0.0922,
-    longitudeDelta: 0.0421
-  });
+  const [initialRegion, setInitialRegion] = useState(MANDURI_COORDINATES);
   const [locationLoading, setLocationLoading] = useState(false);
 
   useEffect(() => {
     fetchReports();
-    getUserLocation();
   }, [fetchReports]);
 
   const getUserLocation = async () => {

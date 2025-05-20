@@ -6,11 +6,11 @@ interface PrivateRouteProps {
 }
 
 const PrivateRoute = ({ children }: PrivateRouteProps) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
   const location = useLocation();
 
   if (!isAuthenticated) {
-    // Redirect to login with the return url
+    logout();
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 

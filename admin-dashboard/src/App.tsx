@@ -11,7 +11,7 @@ import PrivateRoute from './components/PrivateRoute';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import ReportDetailsPage from './pages/ReportDetailsPage';
-import { useEffect } from 'react';
+import StatsPage from './pages/StatsPage';
 
 const theme = createTheme(
   {
@@ -81,22 +81,6 @@ const theme = createTheme(
 );
 
 function App() {
-  useEffect(() => {
-    // Set the favicon
-    const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
-    if (!link) {
-      const newLink = document.createElement('link');
-      newLink.rel = 'icon';
-      newLink.href = '/logo.png';
-      document.head.appendChild(newLink);
-    } else {
-      link.href = '/logo.png';
-    }
-
-    // Set the document title
-    document.title = 'CityFix Admin';
-  }, []);
-
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -117,6 +101,14 @@ function App() {
               element={
                 <PrivateRoute>
                   <ReportDetailsPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/stats"
+              element={
+                <PrivateRoute>
+                  <StatsPage />
                 </PrivateRoute>
               }
             />

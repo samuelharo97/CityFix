@@ -107,7 +107,6 @@ const ReportDetailsPage = () => {
 
     try {
       setUpdating(true);
-      // Make sure we're sending the exact enum value expected by the backend
       const statusValue = status as ReportStatus;
       console.log('Sending status update:', { status: statusValue, comment });
       await reportsApi.updateReportStatus(id!, statusValue, comment);
@@ -235,17 +234,19 @@ const ReportDetailsPage = () => {
                 </Box>
               </Box>
 
-              <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
-                <Person sx={{ mr: 1, color: theme.palette.primary.main }} />
-                <Box>
-                  <Typography variant="body2" color="textSecondary">
-                    Reportado por
-                  </Typography>
-                  <Typography variant="body1">
-                    {report?.createdBy?.name ?? ''}
-                  </Typography>
+              {report?.createdBy?.name && (
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
+                  <Person sx={{ mr: 1, color: theme.palette.primary.main }} />
+                  <Box>
+                    <Typography variant="body2" color="textSecondary">
+                      Reportado por
+                    </Typography>
+                    <Typography variant="body1">
+                      {report?.createdBy?.name ?? ''}
+                    </Typography>
+                  </Box>
                 </Box>
-              </Box>
+              )}
 
               <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
                 <CalendarToday
@@ -328,7 +329,7 @@ const ReportDetailsPage = () => {
       {report.imageUrl && (
         <Paper sx={{ p: 3, mb: 3 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
-            Imagem Principal
+            Evidência Principal
           </Typography>
           <Card sx={{ maxWidth: 600, margin: '0 auto' }}>
             <CardMedia

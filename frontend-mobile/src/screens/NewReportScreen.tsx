@@ -27,6 +27,14 @@ import { CreateReportDto } from '../types/report';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 
+// Coordinates for Manduri, São Paulo
+const MANDURI_COORDINATES = {
+  latitude: -23.00056,
+  longitude: -49.32639,
+  latitudeDelta: 0.0922,
+  longitudeDelta: 0.0421
+};
+
 // Create a separate video component to manage its own hooks
 const VideoPreview = ({ uri, style }: { uri: string; style: any }) => {
   const player = useVideoPlayer(uri);
@@ -56,16 +64,12 @@ export default function NewReportScreen({ navigation }: NewReportScreenProps) {
   const [loading, setLoading] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
   const [mapVisible, setMapVisible] = useState(false);
-  const [mapRegion, setMapRegion] = useState({
-    latitude: -23.55052,
-    longitude: -46.633308,
-    latitudeDelta: 0.0922,
-    longitudeDelta: 0.0421
-  });
+  const [mapRegion, setMapRegion] = useState(MANDURI_COORDINATES);
   const theme = useTheme();
 
   useEffect(() => {
-    initializeUserLocation();
+    // Only initialize the map region to Manduri, don't set a location marker
+    setMapRegion(MANDURI_COORDINATES);
   }, []);
 
   const initializeUserLocation = async () => {
@@ -260,14 +264,17 @@ export default function NewReportScreen({ navigation }: NewReportScreenProps) {
   };
 
   const openMapModal = () => {
-    if (location) {
-      setMapRegion({
-        latitude: location.latitude,
-        longitude: location.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01
-      });
-    }
+    // Use the current location if set, otherwise use Manduri coordinates
+    setMapRegion(
+      location
+        ? {
+            latitude: location.latitude,
+            longitude: location.longitude,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01
+          }
+        : MANDURI_COORDINATES
+    );
     setMapVisible(true);
   };
 
@@ -321,8 +328,8 @@ export default function NewReportScreen({ navigation }: NewReportScreenProps) {
   };
 
   const handleSubmit = async () => {
-    if (!title || !description || !location) {
-      alert('Por favor, preencha todos os campos obrigatórios!');
+    if (!title || !description) {
+      alert('Por favor, preencha os campos de título e descrição!');
       return;
     }
 
@@ -341,18 +348,29 @@ export default function NewReportScreen({ navigation }: NewReportScreenProps) {
         mediaUrls = uploadedUrls;
       }
 
-      const reportData = {
+      const reportData: any = {
         title,
         description,
         category,
-        location: {
+        imageUrl,
+        mediaUrls
+      };
+
+      // Only add location data if a location has been selected
+      if (location) {
+        reportData.location = {
           x: location.longitude,
           y: location.latitude
-        },
-        imageUrl,
-        mediaUrls,
-        streetName: location.address
-      };
+        };
+        reportData.streetName = location.address;
+      } else {
+        // Use Manduri coordinates as fallback if no location selected
+        reportData.location = {
+          x: MANDURI_COORDINATES.longitude,
+          y: MANDURI_COORDINATES.latitude
+        };
+        reportData.streetName = 'Manduri, São Paulo';
+      }
 
       await api.createReport(reportData as CreateReportDto);
 
@@ -537,8 +555,9 @@ export default function NewReportScreen({ navigation }: NewReportScreenProps) {
               </MapView>
               <View style={styles.mapControls}>
                 <Text variant="bodyMedium">
-                  Toque no mapa para selecionar a localização ou arraste o
-                  marcador
+                  {location
+                    ? 'Arraste o marcador para ajustar a localização'
+                    : 'Toque no mapa para selecionar uma localização'}
                 </Text>
                 <View style={styles.mapButtons}>
                   <Button

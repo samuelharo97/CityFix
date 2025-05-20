@@ -80,10 +80,7 @@ const DashboardLayout = ({ children, title }: DashboardLayoutProps) => {
 
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-    { text: 'Relatórios', icon: <ReportsIcon />, path: '/reports' },
-    { text: 'Estatísticas', icon: <StatsIcon />, path: '/stats' },
-    { text: 'Configurações', icon: <SettingsIcon />, path: '/settings' },
-    { text: 'Ajuda', icon: <HelpIcon />, path: '/help' }
+    { text: 'Estatísticas', icon: <StatsIcon />, path: '/stats' }
   ];
 
   const drawer = (

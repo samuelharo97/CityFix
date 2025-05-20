@@ -36,8 +36,6 @@ lerna-debug.log*
 
 # Environment variables
 .env
-.env.*
-!.env.example
 
 # Uploaded files
 /uploads/*

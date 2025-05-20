@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:3000'; // Change to your backend URL
+const API_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000';
 
 // Create axios instance with default config
 const api = axios.create({
@@ -37,36 +37,48 @@ api.interceptors.response.use(
   }
 );
 
-// Reports API
 export const reportsApi = {
-  // Get all reports
   getReports: async () => {
     const response = await api.get('/reports');
     return response.data;
   },
 
-  // Get a single report by ID
   getReport: async (id: string) => {
     const response = await api.get(`/reports/${id}`);
     return response.data;
   },
 
-  // Update report status
   updateReportStatus: async (id: string, status: string, comment?: string) => {
-    console.log('API call - updateReportStatus:', { id, status, comment });
     const requestBody = { status, comment };
-    console.log('Request body:', requestBody);
     const response = await api.patch(`/reports/${id}/status`, requestBody);
     return response.data;
   },
 
-  // Delete a report
   deleteReport: async (id: string) => {
     await api.delete(`/reports/${id}`);
+  },
+
+  getStatsSummary: async () => {
+    const response = await api.get('/reports/stats/summary');
+    return response.data;
+  },
+
+  getStatsByCategory: async () => {
+    const response = await api.get('/reports/stats/by-category');
+    return response.data;
+  },
+
+  getStatsByStatus: async () => {
+    const response = await api.get('/reports/stats/by-status');
+    return response.data;
+  },
+
+  getStatsByDate: async (period: 'day' | 'week' | 'month' = 'week') => {
+    const response = await api.get(`/reports/stats/by-date?period=${period}`);
+    return response.data;
   }
 };
 
-// Auth API
 export const authApi = {
   login: async (email: string, password: string) => {
     const response = await api.post('/auth/login', { email, password });
@@ -74,7 +86,6 @@ export const authApi = {
   }
 };
 
-// Users API
 export const usersApi = {
   getUser: async (id: string) => {
     const response = await api.get(`/users/${id}`);
